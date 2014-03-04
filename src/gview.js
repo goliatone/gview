@@ -8,14 +8,14 @@
 /* jshint strict: false, plusplus: true */
 /*global define: false, require: false, module: false, exports: false */
 (function (root, name, deps, factory) {
-    "use strict";
+    'use strict';
     // Node
-     if(typeof deps === 'function') { 
+    if(typeof deps === 'function') {
         factory = deps;
         deps = [];
     }
         
-    if (typeof exports === 'object') {        
+    if (typeof exports === 'object') {
         module.exports = factory.apply(root, deps.map(require));
     } else if (typeof define === 'function' && 'amd' in define) {
         //require js, here we assume the file is named as the lower
@@ -32,7 +32,7 @@
             return mod;
         };
     }
-}(this, "Gview", function() {
+}(this, 'Gview', ['jquery'], function($) {
 
     /**
      * Extend method.
@@ -50,44 +50,20 @@
                     if (d.get) {
                         target.__defineGetter__(k, d.get);
                         if (d.set) target.__defineSetter__(k, d.set);
-                    } else if (target !== d.value) target[k] = d.value;                
+                    } else if (target !== d.value) target[k] = d.value;
                 });
             }
         }
         return target;
     };
 
-    /**
-     * Proxy method
-     * @param  {Function} fn      Function to be proxied
-     * @param  {Object}   context Context for the method.
-     */
-    var _proxy = function( fn, context ) {
-        var tmp, args, proxy, slice = Array.prototype.slice;
-
-        if ( typeof context === "string" ) {
-            tmp = fn[ context ];
-            context = fn;
-            fn = tmp;
-        }
-
-        if ( ! typeof(fn) === 'function') return undefined;
-
-        args = slice.call(arguments, 2);
-        proxy = function() {
-            return fn.apply( context || this, args.concat( slice.call( arguments ) ) );
-        };
-
-        return proxy;
-    };
-
-
 ///////////////////////////////////////////////////
 // CONSTRUCTOR
 ///////////////////////////////////////////////////
 	
 	var options = {
-        
+        tagName:'div',
+
     };
     
     /**
@@ -96,17 +72,141 @@
      * @param  {object} config Configuration object.
      */
     var Gview = function(config){
-        _extend(options, config || {});     
-        this.init();  
+        this.cid = Math.round(Math.random() * 100000);
+
+        _extend(options, config || {});
+
+        this.init(config);
     };
 
 ///////////////////////////////////////////////////
 // PRIVATE METHODS
 ///////////////////////////////////////////////////
 
-    Gview.prototype.init = function(){
+    Gview.prototype.init = function(config){
         console.log('Gview: Init!');
-        return 'This is just a stub!';
+
+        //View find cache.
+        this._cache = {};
+
+        this._createBaseNode();
+        this.log('init');
     };
+
+    Gview.prototype._createBaseNode = function(){
+        /*
+         * We initialized the View with a reference to an element.
+         */
+        if(this.el) return this.setElement(this.el, 'event' in this);
+
+        /*
+         * We are creating a View with no element, 
+         * will create a new one with $ and tagName.
+         */
+        var $el = $('<'+this.tagName+'>');
+
+        this.setElement($el, 'events' in this);
+    };
+
+    Gview.prototype.setElement = function(el, delegate){
+        this.$el = typeof el === 'string' ? $(el) : el;
+
+        var attrs = _extend({}, this.attributes);
+
+        if(this.id) attrs.id = this.id;
+        if(this.className) attrs['class'] = this.className;
+
+        this.$el.attr(attrs);
+
+        this.el = this.$el[0];
+
+        if(delegate) this.delegateEvents();
+
+        this.forwardEvents();
+
+        return this;
+    };
+
+    /**
+     * Forward a view's component events as if they
+     * were originated by the View. Proxy DOM events.
+     * @param  {Array} forward Array of events we want to forward
+     * @return {this}
+     */
+    Gview.prototype.forwardEvents = function(forward){
+        forward || (forward = this.forward || []);
+
+        forward.forEach(function(event){
+            this.$el.on(event, function(){
+                var args = Array.prototype.slice.call(arguments);
+                args.unshift(event);
+                this.emit.apply(args);
+            });
+        }, this);
+    };
+
+    Gview.prototype.delegateEvents = function(events){
+        events  || (events = this.events);
+        if(! events.length) return this;
+
+        this.removeEvents();
+
+        this.log('delegate events', this.id, events);
+
+        var event, type, selector, method, match,
+            delegateEventSplitter = /^(\S+)\s*(.*)$/;
+
+        for(var key in events){
+            method = events[key];
+
+            if(! (typeof method === 'function')) method = this[method];
+            if(! method) continue;
+
+            match = key.match(delegateEventSplitter);
+            selector = match[2], type = (match[1] + 'events.'+this.cid);
+
+            if(!selector) this.$el.on(event, method);
+            else this.$el.on(type, selector, method);
+        }
+
+        return this;
+    };
+
+    Gview.prototype.removeEvents = function(){
+        this.$el.off('events.'+this.cid);
+    };
+
+
+    Gview.prototype.find = function(selector){
+        if(selector in this._cache) return this._cache[selector];
+
+        return this._cache[selector] = this.$el.find(selector);
+    };
+
+
+    Gview.prototype.update = function(){
+
+        return this;
+    };
+
+    Gview.prototype.render = function(){
+
+        return this;
+    };
+
+    Gview.prototype.remove = function(){
+        this.removeEvents();
+        this.$el.remove();
+        return this;
+    };
+
+    Gview.prototype.log = function(){
+        if('debug' in this && this.debug === false) return;
+        var args = Array.prototype.slice.call(arguments);
+        args.unshift(this.name);
+        console.log.apply(console, args);
+    };
+
+
     return Gview;
 }));
