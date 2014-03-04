@@ -1,11 +1,14 @@
 {
-  "name": "jquery-plugin",
-  "version": "0.0.0-ignored",
+  "name": "gview",
+  "version": "0.1.0",
   "engines": {
     "node": ">= 0.8.0"
   },
   "scripts": {
     "test": "grunt karma:ci"
+  },
+  "peerDependencies":{
+    "grunt-cli": "~0.1"
   },
   "devDependencies": {
     "grunt": "~0.4",
@@ -18,16 +21,11 @@
     "grunt-contrib-livereload": "~0.1.2",
     "grunt-bower-requirejs": "~0.4.1",
     "grunt-regarde": "~0.1.1",
-    "grunt-karma": "~0.7.1",
-    "karma-coverage": "~0.1",
+    "grunt-karma": "~0.3.0",
     "grunt-open": "~0.2.0",
     "matchdep": "~0.1.1",
     "grunt-google-cdn": "~0.1.1",
     "markdown": "~0.4.0",
-    "grunt-bump": "~0.0.11",
-    "phantomjs": "1.9.1-0"
-  },
-  "peerDependencies": {
-    "grunt-cli": "~0.1"
+    "jsdox": "~0.2.4"
   }
 }
