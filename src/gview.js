@@ -74,7 +74,7 @@
     var Gview = function(config){
         this.cid = Math.round(Math.random() * 100000);
 
-        _extend(options, config || {});
+        _extend(this, options, config || {});
 
         this.init(config);
     };
@@ -93,31 +93,39 @@
         this.log('init');
     };
 
+    /**
+     * TODO: WE SHOULD CHECK IF WE ARE REUSING
+     * THE VIEW, AND IF WE HAVE AN $el, IF SO
+     * DETACH, REMOVE LISTENERS, ETC.
+     * 
+     * @return  {[type]} [description]
+     * @private
+     */
     Gview.prototype._createBaseNode = function(){
         /*
          * We initialized the View with a reference to an element.
          */
-        if(this.el) return this.setElement(this.el, 'event' in this);
+        if(this.el) return this.setElement(this.el, 'events' in this);
 
         /*
          * We are creating a View with no element, 
          * will create a new one with $ and tagName.
          */
         var $el = $('<'+this.tagName+'>');
-
+        
         this.setElement($el, 'events' in this);
     };
 
     Gview.prototype.setElement = function(el, delegate){
-        this.$el = typeof el === 'string' ? $(el) : el;
-
+        this.$el = (typeof el === 'string') ? $(el) : el;
+        
         var attrs = _extend({}, this.attributes);
 
         if(this.id) attrs.id = this.id;
         if(this.className) attrs['class'] = this.className;
-
+        
         this.$el.attr(attrs);
-
+        
         this.el = this.$el[0];
 
         if(delegate) this.delegateEvents();
@@ -147,25 +155,24 @@
 
     Gview.prototype.delegateEvents = function(events){
         events  || (events = this.events);
-        if(! events.length) return this;
+
+        if(!events) return this;
 
         this.removeEvents();
 
-        this.log('delegate events', this.id, events);
-
-        var event, type, selector, method, match,
+        var type, selector, method, match,
             delegateEventSplitter = /^(\S+)\s*(.*)$/;
 
         for(var key in events){
             method = events[key];
-
+            
             if(! (typeof method === 'function')) method = this[method];
             if(! method) continue;
 
             match = key.match(delegateEventSplitter);
-            selector = match[2], type = (match[1] + 'events.'+this.cid);
+            selector = match[2], type = (match[1] + '.events'+this.cid);
 
-            if(!selector) this.$el.on(event, method);
+            if(!selector) this.$el.on(type, method);
             else this.$el.on(type, selector, method);
         }
 
@@ -173,7 +180,7 @@
     };
 
     Gview.prototype.removeEvents = function(){
-        this.$el.off('events.'+this.cid);
+        this.$el.off('.events'+this.cid);
     };
 
 
@@ -203,7 +210,7 @@
     Gview.prototype.log = function(){
         if('debug' in this && this.debug === false) return;
         var args = Array.prototype.slice.call(arguments);
-        args.unshift(this.name);
+        args.unshift(this.cid);
         console.log.apply(console, args);
     };
 
