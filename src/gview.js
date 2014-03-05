@@ -143,14 +143,25 @@
      */
     Gview.prototype.forwardEvents = function(forward){
         forward || (forward = this.forward || []);
-
+        var type;
         forward.forEach(function(event){
-            this.$el.on(event, function(){
+            
+            type = this.forwardEventBuilder(event);
+
+            this.$el.on(event, (function(){
                 var args = Array.prototype.slice.call(arguments);
-                args.unshift(event);
-                this.emit.apply(args);
-            });
+                args.unshift(type);
+                this.emit.apply(this, args);
+            }).bind(this));
         }, this);
+    };
+
+    Gview.prototype.forwardEventBuilder = function(event){
+        return 'component.' + event;
+    };
+
+    Gview.prototype.emit = function(){
+        //this is a stub method, it should be implemented.
     };
 
     Gview.prototype.delegateEvents = function(events){
