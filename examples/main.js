@@ -3,12 +3,16 @@
 requirejs.config({
     paths: {
         'jquery': 'jquery/jquery',
+        'gpub': 'gpub/src/gpub',
         'gview': 'gview'
     }
 });
 
-define(['gview', 'jquery'], function (Gview, $) {
+define(['gview', 'jquery', 'gpub'], function (Gview, $, Gpub) {
     console.log('Loading');
+
+    Gpub.observable(Gview);
+
 	var gview = new Gview({
 		id:'gview',
 		tagName:'button',
@@ -23,7 +27,8 @@ define(['gview', 'jquery'], function (Gview, $) {
 			console.log(this);
 			this.el.innerHTML = 'hola';
 			return this;
-		}
+		},
+		forward:['click']
 
 	}).render();
 
@@ -40,5 +45,10 @@ define(['gview', 'jquery'], function (Gview, $) {
 	}).render();
 	
 	$('aside').append(gview.el);
+
+	var forwardClick = gview.forwardEventBuilder('click');
+	gview.on(forwardClick, function(){
+		console.log('This is a component event forwarded by the view');
+	});
 	window.view = gview;
 });
