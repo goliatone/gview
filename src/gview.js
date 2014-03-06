@@ -91,6 +91,10 @@
 
         this._createBaseNode();
         this.log('init');
+
+        //If we have an after create method, call it. 
+        if('afterCreate' in this &&
+            typeof this.afterCreate == 'function') this.afterCreate(config);
     };
 
     /**
