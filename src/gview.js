@@ -164,6 +164,12 @@
         //this is a stub method, it should be implemented.
     };
 
+    /**
+     * Quick auto-register of events.
+     * TODO: Should this be merged with forwardEvents?
+     * @param  {Object} events Hash with event:selector => listener
+     * @return {this}
+     */
     Gview.prototype.delegateEvents = function(events){
         events  || (events = this.events);
 
