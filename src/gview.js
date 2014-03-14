@@ -60,9 +60,13 @@
 ///////////////////////////////////////////////////
 // CONSTRUCTOR
 ///////////////////////////////////////////////////
-	
-	var options = {
+    
+    var options = {
         tagName:'div',
+        DOM:$,
+        DOMFactory:function(el){
+            return (el instanceof jQuery) ? el : $(el)
+        }
 
     };
     
@@ -75,7 +79,7 @@
         this.cid = Math.round(Math.random() * 100000);
 
         _extend(this, options, config || {});
-
+        this.log(config);
         this.init(config);
     };
 
@@ -84,7 +88,7 @@
 ///////////////////////////////////////////////////
 
     Gview.prototype.init = function(config){
-        console.log('Gview: Init!');
+        console.log('Gview: Init!', this);
 
         //View find cache.
         this._cache = {};
@@ -111,14 +115,14 @@
          * We are creating a View with no element, 
          * will create a new one with $ and tagName.
          */
-        var $el = $('<'+this.tagName+'>');
+        var $el = this.DOMFactory('<'+this.tagName+'>');
         
         this.setElement($el, 'events' in this);
     };
 
     Gview.prototype.setElement = function(el, delegate){
-        this.$el = (typeof el === 'string') ? $(el) : el;
-        
+        this.$el = this.DOMFactory(el);
+
         var attrs = _extend({}, this.attributes);
 
         if(this.id) attrs.id = this.id;
@@ -201,6 +205,32 @@
         return this._cache[selector] = this.$el.find(selector);
     };
 
+///////////////////////////////////////////////
+/// ViewTransition Management
+///////////////////////////////////////////////
+    Gview.prototype.show = function(options){
+        this.emit('show.start');
+        this.doShow(options);
+    };
+
+    Gview.prototype.doShow = function(options){
+        this.$el.show();
+        this.transitionDone('show.done');
+    };
+
+    Gview.prototype.transitionDone = function(event){
+        this.emit(event);
+    }
+
+    Gview.prototype.hide = function(options){
+        this.emit('hide.start');
+        this.doHide(options);
+    };
+
+    Gview.prototype.doHide = function(options){
+        this.$el.hide();
+        this.transitionDone('hide.done');
+    };
 
     Gview.prototype.update = function(){
 
