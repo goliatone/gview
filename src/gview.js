@@ -95,6 +95,10 @@
 
         this._createBaseNode();
         this.log('init');
+
+        //If we have an after create method, call it. 
+        if('afterCreate' in this &&
+            typeof this.afterCreate == 'function') this.afterCreate(config);
     };
 
     /**
@@ -168,6 +172,12 @@
         //this is a stub method, it should be implemented.
     };
 
+    /**
+     * Quick auto-register of events.
+     * TODO: Should this be merged with forwardEvents?
+     * @param  {Object} events Hash with event:selector => listener
+     * @return {this}
+     */
     Gview.prototype.delegateEvents = function(events){
         events  || (events = this.events);
 
