@@ -23,6 +23,11 @@ define(['gview', 'jquery', 'gpub'], function (Gview, $, Gpub) {
 		events:{
 			'click':'peperone'
 		},
+		doShow:function(){
+			this.$el.show('slow', (function(){
+				this.transitionDone('show.done');
+			}).bind(this));
+		},
 		render:function(){
 			console.log(this);
 			this.el.innerHTML = 'hola';
@@ -30,20 +35,26 @@ define(['gview', 'jquery', 'gpub'], function (Gview, $, Gpub) {
 		},
 		forward:['click']
 
-	}).render();
+	}).render().show();
 
-	var profile = new Gview({
-		el:$('.profile'),
+	var subview = new Gview({
+		el:$('.subview'),
 		events:{
 			'click':function(){
-				console.log('click')
+				console.log('click');
 			}
+		},
+		doShow:function(){
+			this.$el.show('slow', (function(){
+				this.transitionDone('show.done');
+			}).bind(this));
 		},
 		render:function(){
 			this.el.innerHTML = '<p>This should be rendered as it is</p>';
+			return this;
 		}
-	}).render();
-	
+	}).render().show();
+
 	$('aside').append(gview.el);
 
 	var forwardClick = gview.forwardEventBuilder('click');
@@ -51,4 +62,5 @@ define(['gview', 'jquery', 'gpub'], function (Gview, $, Gpub) {
 		console.log('This is a component event forwarded by the view');
 	});
 	window.view = gview;
+	window.subview = subview;
 });
