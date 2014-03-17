@@ -1,11 +1,8 @@
 <!doctype html>
-<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
-<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
-<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
-<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
-    <head>
-        <meta charset="utf-8">
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Gview Example</title>
 
         <!--[if lt IE 9]> HTML5Shiv
@@ -14,19 +11,19 @@
     <link rel="stylesheet" type="text/css" media="all" href="style.css">
     </head>
     <body>
-        
-
-        <div class='container'>
-            <div>
+        <div class='row container'>
+            <div class="large-6 columns">
                 <h2>Gview Example</h2>
             </div>
-            <aside class='content'>
-                
-            </aside>
-            <div class='profile'>
-                <p>This is some text</p>
-            </div>
 
+            <div class="large-6 columns">
+                <aside class='content'>
+
+                </aside>
+                <div class='subview callout panel' data-state='hidden' style='display:none;'>
+                        <p>This is some text</p>
+                </div>
+            </div>
         </div>
     </body>
     <script src="requirejs/require.js" data-main="main"></script>
