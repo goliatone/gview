@@ -14,7 +14,7 @@
         factory = deps;
         deps = [];
     }
-        
+
     if (typeof exports === 'object') {
         module.exports = factory.apply(root, deps.map(require));
     } else if (typeof define === 'function' && 'amd' in define) {
@@ -60,19 +60,19 @@
 ///////////////////////////////////////////////////
 // CONSTRUCTOR
 ///////////////////////////////////////////////////
-    
+
     var options = {
         tagName:'div',
         DOM:$,
         DOMFactory:function(el){
-            return (el instanceof jQuery) ? el : $(el)
+            return (el instanceof jQuery) ? el : $(el);
         }
 
     };
-    
+
     /**
      * Gview constructor
-     * 
+     *
      * @param  {object} config Configuration object.
      */
     var Gview = function(config){
@@ -95,17 +95,13 @@
 
         this._createBaseNode();
         this.log('init');
-
-        //If we have an after create method, call it. 
-        if('afterCreate' in this &&
-            typeof this.afterCreate == 'function') this.afterCreate(config);
     };
 
     /**
      * TODO: WE SHOULD CHECK IF WE ARE REUSING
      * THE VIEW, AND IF WE HAVE AN $el, IF SO
      * DETACH, REMOVE LISTENERS, ETC.
-     * 
+     *
      * @return  {[type]} [description]
      * @private
      */
@@ -116,27 +112,43 @@
         if(this.el) return this.setElement(this.el, 'events' in this);
 
         /*
-         * We are creating a View with no element, 
+         * We are creating a View with no element,
          * will create a new one with $ and tagName.
          */
         var $el = this.DOMFactory('<'+this.tagName+'>');
-        
+
         this.setElement($el, 'events' in this);
     };
 
+    /**
+     * Updates the `View`s element.
+     * @param {String|Object} el   DOM element.
+     * @param {Boolean} delegate   Should we delegate events.
+     * @return {this}
+     */
     Gview.prototype.setElement = function(el, delegate){
+
+        this.removeEvents();
+
         this.$el = this.DOMFactory(el);
 
         var attrs = _extend({}, this.attributes);
 
         if(this.id) attrs.id = this.id;
         if(this.className) attrs['class'] = this.className;
-        
+
         this.$el.attr(attrs);
-        
+
         this.el = this.$el[0];
 
         if(delegate) this.delegateEvents();
+
+        //Pass through method calls, we make this available
+        ['attr', 'appendTo', 'data'].forEach(function(method){
+            this[method] = function(){
+                return this.$el[method].apply(this.$el, arguments);
+            };
+        }, this);
 
         this.forwardEvents();
 
@@ -153,7 +165,7 @@
         forward || (forward = this.forward || []);
         var type;
         forward.forEach(function(event){
-            
+
             type = this.forwardEventBuilder(event);
 
             this.$el.on(event, (function(){
@@ -172,12 +184,6 @@
         //this is a stub method, it should be implemented.
     };
 
-    /**
-     * Quick auto-register of events.
-     * TODO: Should this be merged with forwardEvents?
-     * @param  {Object} events Hash with event:selector => listener
-     * @return {this}
-     */
     Gview.prototype.delegateEvents = function(events){
         events  || (events = this.events);
 
@@ -190,7 +196,7 @@
 
         for(var key in events){
             method = events[key];
-            
+
             if(! (typeof method === 'function')) method = this[method];
             if(! method) continue;
 
@@ -205,7 +211,11 @@
     };
 
     Gview.prototype.removeEvents = function(){
+        if(! this.$el) return this;
+
         this.$el.off('.events'+this.cid);
+
+        return this;
     };
 
 
@@ -220,7 +230,9 @@
 ///////////////////////////////////////////////
     Gview.prototype.show = function(options){
         this.emit('show.start');
+        this.attach();
         this.doShow(options);
+        return this;
     };
 
     Gview.prototype.doShow = function(options){
@@ -228,18 +240,43 @@
         this.transitionDone('show.done');
     };
 
-    Gview.prototype.transitionDone = function(event){
-        this.emit(event);
-    }
-
     Gview.prototype.hide = function(options){
         this.emit('hide.start');
         this.doHide(options);
+        return this;
     };
 
     Gview.prototype.doHide = function(options){
         this.$el.hide();
         this.transitionDone('hide.done');
+    };
+
+    Gview.prototype.transitionDone = function(event){
+        this.emit(event);
+    };
+///////////////////////////////////////////////
+    /**
+     * Renders template with provided
+     * context.
+     * @return {String} Rendered template content.
+     */
+    Gview.prototype.template = function(context){
+        throw new Error('Template function not defined!');
+    };
+
+    /**
+     * Returns the context object for
+     * the `template` method.
+     *
+     * Default: `this.model.toJSON()`
+     * or an empty object if view has no model.
+     *
+     * @method context
+     * @return {Object} context
+     **/
+    Gview.prototype.context = function() {
+        if (this.model) return this.model.toJSON();
+        return {};
     };
 
     Gview.prototype.update = function(){
@@ -252,8 +289,49 @@
         return this;
     };
 
+    /**
+     * Detaches view from DOM but keeps
+     * it in memory and maintains state.
+     * It creates a ghost element to
+     * be reinserted in the same place.
+     * @return {this}
+     */
+    Gview.prototype.detach = function(){
+        if(this.detached) return this;
+
+        if(!this.ghost) this.ghost = this.DOMFactory('<span/>');
+
+        this.$el.after(this.ghost);
+        this.$el.detach();
+        this.detached = true;
+
+        return this;
+    };
+
+    /**
+     * Attaches a previously detached
+     * view to the DOM.
+     * @return {this}
+     */
+    Gview.prototype.attach = function(){
+        if(!this.detached || !this.ghost) return this;
+        this.ghost.replaceWith(this.$el);
+        this.detached = false;
+        return this;
+    };
+
+    /**
+     * Discards the view, removing all
+     * events and removing the `$el` from
+     * DOM.
+     * Use `detach` if you want to keep the
+     * view around to be used later.
+     *
+     * @return {this}
+     */
     Gview.prototype.remove = function(){
         this.removeEvents();
+        if(this.ghost) this.ghost.remove();
         this.$el.remove();
         return this;
     };
