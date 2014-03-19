@@ -8,12 +8,12 @@ requirejs.config({
     }
 });
 
-define(['gview', 'jquery', 'gpub'], function (Gview, $, Gpub) {
+define(['gview', 'jquery', 'gpub'], function (GView, $, Gpub) {
     console.log('Loading');
 
-    Gpub.observable(Gview);
+    Gpub.observable(GView);
 
-	var gview = new Gview({
+	var gview = new GView({
 		id:'gview',
 		tagName:'button',
 		className:'button',
@@ -37,7 +37,7 @@ define(['gview', 'jquery', 'gpub'], function (Gview, $, Gpub) {
 
 	}).render().show();
 
-	var subview = new Gview({
+	var subview = new GView({
 		el:$('.subview'),
 		events:{
 			'click':function(){
@@ -63,4 +63,24 @@ define(['gview', 'jquery', 'gpub'], function (Gview, $, Gpub) {
 	});
 	window.view = gview;
 	window.subview = subview;
+
+
+	window.cache = function(selector){
+		if(!this.cache) this.cache = {};
+		if(this.cache[selector]) return this.cache[selector];
+		this.cache[selector] = $(selector);
+		return this.cache[selector];
+	};
+
+	window.find = function(selector){
+		if(!this.cache) this.cache = {};
+		if(!this.$el) this.$el = $('.container');
+        if(selector in this.cache) return this.cache[selector];
+
+        return this.cache[selector] = this.$el.find(selector);
+    };
+
+    window.find._cache = {};
+    window.find.$el = $('.container');
+    window.GView = GView;
 });
