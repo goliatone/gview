@@ -57,11 +57,15 @@
         return target;
     };
 
+    var _isElement = function(obj) {
+        return !!(obj && obj.nodeType === 1);
+    };
+
 ///////////////////////////////////////////////////
 // CONSTRUCTOR
 ///////////////////////////////////////////////////
 
-    var options = {
+    var _options = {
         tagName:'div',
         DOM:$,
         DOMFactory:function(el){
@@ -78,7 +82,7 @@
     var GView = function(config){
         this.cid = Math.round(Math.random() * 100000);
 
-        _extend(this, options, config || {});
+        _extend(this, _options, config || {});
         this.log(config);
         this.init(config);
     };
@@ -88,10 +92,18 @@
 ///////////////////////////////////////////////////
 
     GView.prototype.init = function(config){
+        if(this.initialized) return;
+        this.initialized = true;
+
         console.log('GView: Init!', this);
 
         //View find cache.
         this._cache = {};
+
+        //Collect all subviews.
+        this._views = {};
+
+        this.rendered = false;
 
         this._createBaseNode();
         this.log('init');
@@ -149,6 +161,9 @@
                 return this.$el[method].apply(this.$el, arguments);
             };
         }, this);
+
+        //TODO: How to know if content was rendered server side?
+        this.rendered = !!this.data('rendered');
 
         this.forwardEvents();
 
@@ -300,6 +315,11 @@
         this.emit(event);
     };
 ///////////////////////////////////////////////
+
+    GView.prototype.setStyle = function(style){
+        this.$el.css(style);
+        return this;
+    };
     /**
      * Renders template with provided
      * context.
@@ -324,14 +344,46 @@
         return {};
     };
 
+    GView.prototype.renderTemplate = function(){
+        return this.$el.html(this.template(this.context()));
+    };
+
     GView.prototype.update = function(){
 
         return this;
     };
 
-    GView.prototype.render = function(){
+    GView.prototype.render = function(options){
+        options = _extend({}, options);
+
+        this.preRender();
+
+        this.doRender(options);
+
+        this.rendered = true;
+
+        this.afterTemplate();
+
+        this.postRender();
 
         return this;
+    };
+
+    GView.prototype.preRender = function(){
+
+    };
+
+    GView.prototype.doRender = function(options){
+        return this;
+    };
+
+    GView.prototype.afterRender = function(){};
+
+    GView.prototype.postRender = function(){
+        //Select all subviews contained in this view.
+        this.children().forEach(function(view){
+
+        },this);
     };
 
     /**
