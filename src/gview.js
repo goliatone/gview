@@ -1,5 +1,5 @@
 /*
- * gview
+ * GView
  * https://github.com/goliatone/gview
  * Created with gbase.
  * Copyright (c) 2014 goliatone
@@ -32,13 +32,13 @@
             return mod;
         };
     }
-}(this, 'Gview', ['jquery'], function($) {
+}(this, 'GView', ['jquery'], function($) {
 
     /**
      * Extend method.
      * @param  {Object} target Source object
      * @return {Object}        Resulting object from
-     *                         meging target to params.
+     *                         merging target to params.
      */
     var _extend = function(target) {
         var i = 1, length = arguments.length, source;
@@ -71,11 +71,11 @@
     };
 
     /**
-     * Gview constructor
+     * GView constructor
      *
      * @param  {object} config Configuration object.
      */
-    var Gview = function(config){
+    var GView = function(config){
         this.cid = Math.round(Math.random() * 100000);
 
         _extend(this, options, config || {});
@@ -87,8 +87,8 @@
 // PRIVATE METHODS
 ///////////////////////////////////////////////////
 
-    Gview.prototype.init = function(config){
-        console.log('Gview: Init!', this);
+    GView.prototype.init = function(config){
+        console.log('GView: Init!', this);
 
         //View find cache.
         this._cache = {};
@@ -105,7 +105,7 @@
      * @return  {[type]} [description]
      * @private
      */
-    Gview.prototype._createBaseNode = function(){
+    GView.prototype._createBaseNode = function(){
         /*
          * We initialized the View with a reference to an element.
          */
@@ -126,7 +126,7 @@
      * @param {Boolean} delegate   Should we delegate events.
      * @return {this}
      */
-    Gview.prototype.setElement = function(el, delegate){
+    GView.prototype.setElement = function(el, delegate){
 
         this.removeEvents();
 
@@ -161,7 +161,7 @@
      * @param  {Array} forward Array of events we want to forward
      * @return {this}
      */
-    Gview.prototype.forwardEvents = function(forward){
+    GView.prototype.forwardEvents = function(forward){
         forward || (forward = this.forward || []);
         var type;
         forward.forEach(function(event){
@@ -176,15 +176,46 @@
         }, this);
     };
 
-    Gview.prototype.forwardEventBuilder = function(event){
+    GView.prototype.forwardEventBuilder = function(event){
         return 'component.' + event;
     };
 
-    Gview.prototype.emit = function(){
+    /**
+     * `emit` method stub. To be implemented by extending
+     * the `View` object or adding a mixin.
+     * @return {this}
+     */
+    GView.prototype.emit = function(){
         //this is a stub method, it should be implemented.
+        console.warn('GView:emit, method not implemented');
+        return this;
     };
 
-    Gview.prototype.delegateEvents = function(events){
+    /**
+     * Attaches events to the `View`s underlaying
+     * DOM object.
+     * `events` is a hash that which keys are in
+     * the form of _event_ + space + _selector_.
+     * Omitting the _selector_ binds the event to
+     * the view's `el` element.
+     *
+     * _callback_s are either the string name of
+     * a function in the view or a function.
+     * _callback_s `this` will be bound to the
+     * view.
+     *
+     * *{"event selector": "callback"}*
+     *     {
+     *       'click .button' : function(e){...}
+     *       'click .open' : 'doOpen'
+     *     }
+     *
+     * @param  {Object} events Hash with keys in the
+     *                         form event selector and
+     *                         handlers as value.
+     * @return {this}
+     */
+    GView.prototype.delegateEvents = function(events){
         events  || (events = this.events);
 
         if(!events) return this;
@@ -200,6 +231,8 @@
             if(! (typeof method === 'function')) method = this[method];
             if(! method) continue;
 
+            method.bind(this);
+
             match = key.match(delegateEventSplitter);
             selector = match[2], type = (match[1] + '.events'+this.cid);
 
@@ -210,7 +243,13 @@
         return this;
     };
 
-    Gview.prototype.removeEvents = function(){
+    /**
+     * Removes all delegated events using an
+     * event namespace.
+     *
+     * @return {this}
+     */
+    GView.prototype.removeEvents = function(){
         if(! this.$el) return this;
 
         this.$el.off('.events'+this.cid);
@@ -218,9 +257,15 @@
         return this;
     };
 
-
-    Gview.prototype.find = function(selector){
-        if(selector in this._cache) return this._cache[selector];
+    /**
+     * Finds `selector` in the `view`s DOM element.
+     *
+     * @param  {String|Object} selector
+     * @return {Object}
+     */
+    GView.prototype.find = function(selector){
+        if( typeof selector === 'string' &&
+            selector in this._cache) return this._cache[selector];
 
         return this._cache[selector] = this.$el.find(selector);
     };
@@ -228,30 +273,30 @@
 ///////////////////////////////////////////////
 /// ViewTransition Management
 ///////////////////////////////////////////////
-    Gview.prototype.show = function(options){
+    GView.prototype.show = function(options){
         this.emit('show.start');
         this.attach();
         this.doShow(options);
         return this;
     };
 
-    Gview.prototype.doShow = function(options){
+    GView.prototype.doShow = function(options){
         this.$el.show();
         this.transitionDone('show.done');
     };
 
-    Gview.prototype.hide = function(options){
+    GView.prototype.hide = function(options){
         this.emit('hide.start');
         this.doHide(options);
         return this;
     };
 
-    Gview.prototype.doHide = function(options){
+    GView.prototype.doHide = function(options){
         this.$el.hide();
         this.transitionDone('hide.done');
     };
 
-    Gview.prototype.transitionDone = function(event){
+    GView.prototype.transitionDone = function(event){
         this.emit(event);
     };
 ///////////////////////////////////////////////
@@ -260,7 +305,7 @@
      * context.
      * @return {String} Rendered template content.
      */
-    Gview.prototype.template = function(context){
+    GView.prototype.template = function(context){
         throw new Error('Template function not defined!');
     };
 
@@ -274,17 +319,17 @@
      * @method context
      * @return {Object} context
      **/
-    Gview.prototype.context = function() {
+    GView.prototype.context = function() {
         if (this.model) return this.model.toJSON();
         return {};
     };
 
-    Gview.prototype.update = function(){
+    GView.prototype.update = function(){
 
         return this;
     };
 
-    Gview.prototype.render = function(){
+    GView.prototype.render = function(){
 
         return this;
     };
@@ -296,7 +341,7 @@
      * be reinserted in the same place.
      * @return {this}
      */
-    Gview.prototype.detach = function(){
+    GView.prototype.detach = function(){
         if(this.detached) return this;
 
         if(!this.ghost) this.ghost = this.DOMFactory('<span/>');
@@ -313,7 +358,7 @@
      * view to the DOM.
      * @return {this}
      */
-    Gview.prototype.attach = function(){
+    GView.prototype.attach = function(){
         if(!this.detached || !this.ghost) return this;
         this.ghost.replaceWith(this.$el);
         this.detached = false;
@@ -329,14 +374,16 @@
      *
      * @return {this}
      */
-    Gview.prototype.remove = function(){
+    GView.prototype.remove = function(){
         this.removeEvents();
         if(this.ghost) this.ghost.remove();
         this.$el.remove();
         return this;
     };
 
-    Gview.prototype.log = function(){
+    // var logger = console;
+    // GView.prototype.logger = console;
+    GView.prototype.log = function(){
         if('debug' in this && this.debug === false) return;
         var args = Array.prototype.slice.call(arguments);
         args.unshift(this.cid);
@@ -344,5 +391,5 @@
     };
 
 
-    return Gview;
+    return GView;
 }));
