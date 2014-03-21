@@ -57,11 +57,15 @@
         return target;
     };
 
+    var _isElement = function(obj) {
+        return !!(obj && obj.nodeType === 1);
+    };
+
 ///////////////////////////////////////////////////
 // CONSTRUCTOR
 ///////////////////////////////////////////////////
 
-    var options = {
+    var _options = {
         tagName:'div',
         DOM:$,
         DOMFactory:function(el){
@@ -78,8 +82,8 @@
     var GView = function(config){
         this.cid = Math.round(Math.random() * 100000);
 
-        _extend(this, options, config || {});
-        this.log(config);
+        _extend(this, _options, config || {});
+        this.logger.log(config);
         this.init(config);
     };
 
@@ -88,13 +92,32 @@
 ///////////////////////////////////////////////////
 
     GView.prototype.init = function(config){
-        console.log('GView: Init!', this);
+        if(this.initialized) return;
+        this.initialized = true;
+
+        this.logger.log('GView: Init!', this);
 
         //View find cache.
         this._cache = {};
 
+        //Collect all subviews.
+        //TODO: Should this be hash or array?!
+        this._views = [];
+
+        //TODO: Handle this better
+        this.subviewsFactoryBuilders = {'SceneView':function(id,el){
+            return new GView({el:el});
+        }};
+
+        this.rendered = false;
+
         this._createBaseNode();
-        this.log('init');
+
+        this.logger.log('init');
+
+        //If we have an after create method, call it.
+        if('afterCreate' in this &&
+            typeof this.afterCreate == 'function') this.afterCreate(config);
     };
 
     /**
@@ -141,6 +164,8 @@
 
         this.el = this.$el[0];
 
+        if(this.style) this.setStyle(this.style);
+
         if(delegate) this.delegateEvents();
 
         //Pass through method calls, we make this available
@@ -150,11 +175,14 @@
             };
         }, this);
 
+        //TODO: How to know if content was rendered server side?
+        this.rendered = !!this.data('rendered');
+
         this.forwardEvents();
 
         return this;
     };
-
+//{
     /**
      * Forward a view's component events as if they
      * were originated by the View. Proxy DOM events.
@@ -264,18 +292,21 @@
      * @return {Object}
      */
     GView.prototype.find = function(selector){
+        return this.$el.find(selector);
         if( typeof selector === 'string' &&
             selector in this._cache) return this._cache[selector];
 
         return this._cache[selector] = this.$el.find(selector);
     };
-
+//}
 ///////////////////////////////////////////////
 /// ViewTransition Management
 ///////////////////////////////////////////////
+//{
     GView.prototype.show = function(options){
         this.emit('show.start');
         this.attach();
+        this.render(options);
         this.doShow(options);
         return this;
     };
@@ -299,7 +330,13 @@
     GView.prototype.transitionDone = function(event){
         this.emit(event);
     };
-///////////////////////////////////////////////
+//}
+//////////////////////////////////////////////{
+
+    GView.prototype.setStyle = function(style){
+        this.$el.css(style);
+        return this;
+    };
     /**
      * Renders template with provided
      * context.
@@ -324,14 +361,97 @@
         return {};
     };
 
+    GView.prototype.renderTemplate = function(){
+        return this.$el.html(this.template(this.context()));
+    };
+//}
     GView.prototype.update = function(){
 
         return this;
     };
 
-    GView.prototype.render = function(){
+    GView.prototype.render = function(request){
+        this.request = _extend({}, request);
+
+        this.preRender();
+
+        this.doRender();
+
+        this.rendered = true;
+
+        this.afterTemplate();
+
+        this.postRender();
 
         return this;
+    };
+
+    GView.prototype.preRender = function(){
+        this._views || (this._views = []);
+        //we should be collecting subviews and detach
+        //the ones that are registered
+        this._views.forEach(function(view){
+            view.detach();
+        });
+    };
+
+    GView.prototype.doRender = function(options){
+        console.log('WE ARE RENDERING!!!');
+        return this;
+    };
+
+    GView.prototype.afterTemplate = function(){};
+
+    GView.prototype.postRender = function(){
+        this.subviews || (this.subviews = {});
+        //Select all subviews contained in this view.
+        this.getViews().forEach(function(dom){
+            this.logger.log('view DOM %o', dom);
+
+            //get a jquery like object from dom
+            var fragment  = this.DOMFactory(dom);
+            //get a reference to the constructor class
+            var viewId = fragment.data('subview');
+            var view;
+
+            if(!this.subviews[viewId]){
+                //No subview registered with viewId
+                view = this.subviewsFactory(viewId, fragment);
+            } else {
+                view = this.subviews[viewId];
+            }
+
+            if(!view) return this.logger.warn('Error wiring up subview:', viewId);
+
+            fragment.replaceWith(view.$el);
+
+            this._views.push(view);
+
+            window.fragment = view;
+        }, this);
+
+        //Views created, now render
+        this._views.forEach(function(view){
+            view.render();
+        });
+
+        if(this.onSubviewsRendered) this.onSubviewsRendered.call(this);
+    };
+
+    GView.prototype.subviewsFactory = function(viewId, el){
+        if(!this.subviewsFactoryBuilders[viewId]) {
+            return this.logger.error('Could not render ',viewId);
+        }
+        var builder = this.subviewsFactoryBuilders[viewId];
+        this.logger.log('building subview for %s: %o',viewId, el);
+
+        return builder.call(this, viewId, el);
+    };
+
+
+    GView.prototype.getViews = function(){
+        if(!this.subviewSelector) return [];
+        return Array.prototype.slice.call(this.find(this.subviewSelector));
     };
 
     /**
@@ -382,13 +502,7 @@
     };
 
     // var logger = console;
-    // GView.prototype.logger = console;
-    GView.prototype.log = function(){
-        if('debug' in this && this.debug === false) return;
-        var args = Array.prototype.slice.call(arguments);
-        args.unshift(this.cid);
-        console.log.apply(console, args);
-    };
+    GView.prototype.logger = console;
 
 
     return GView;
