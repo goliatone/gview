@@ -1,13 +1,13 @@
 {
   "name": "gview",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "engines": {
     "node": ">= 0.8.0"
   },
   "scripts": {
     "test": "grunt karma:ci"
   },
-  "peerDependencies":{
+  "peerDependencies": {
     "grunt-cli": "~0.1"
   },
   "devDependencies": {
@@ -26,6 +26,7 @@
     "matchdep": "~0.1.1",
     "grunt-google-cdn": "~0.1.1",
     "markdown": "~0.4.0",
-    "jsdox": "~0.2.4"
+    "jsdox": "~0.2.4",
+    "grunt-bump": "0.0.13"
   }
 }
