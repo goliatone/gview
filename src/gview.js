@@ -425,7 +425,9 @@
 
             fragment.replaceWith(view.$el);
 
-            this._views.push(view);
+            if(this._views.indexOf(view) === -1){
+                this._views.push(view);
+            }
 
             window.fragment = view;
         }, this);
