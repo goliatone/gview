@@ -94,7 +94,7 @@
     GView.prototype.init = function(config){
         if(this.initialized) return;
         this.initialized = true;
-
+        this.transitionState = null;
         this.logger.log('GView: Init!', this);
 
         //View find cache.
@@ -328,6 +328,7 @@
     };
 
     GView.prototype.transitionDone = function(event){
+        this.transitionState = event;
         this.emit(event);
     };
 //}
